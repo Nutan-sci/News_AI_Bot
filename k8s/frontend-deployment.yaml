@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: news-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: news-frontend
+  template:
+    metadata:
+      labels:
+        app: news-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: registry.example.com/news-frontend:latest
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: news-frontend
+spec:
+  selector:
+    app: news-frontend
+  ports:
+    - port: 80
+      targetPort: 3000

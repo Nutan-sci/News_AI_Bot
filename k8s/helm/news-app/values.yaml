@@ -1,0 +1,14 @@
+replicaCount: 2
+
+image:
+  registry: registry.example.com
+  backend: news-backend:latest
+  frontend: news-frontend:latest
+
+service:
+  backendPort: 8000
+  frontendPort: 80
+
+ingress:
+  enabled: false
+  host: example.com

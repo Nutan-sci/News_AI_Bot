@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "news-app.fullname" . }}-backend
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "news-app.name" . }}
+    app.kubernetes.io/component: backend
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.backendPort }}
+      targetPort: 8000

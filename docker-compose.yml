@@ -1,0 +1,90 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      NEWSAPI_KEY: eb33be5a325c4619abc2122dacb51774
+      GEMINI_API_KEY: AIzaSyAJ_RvGvr-oZiz7jW825GU3SOPc_60Pwro
+      LLM_MOCK_MODE: true
+      POSTGRES_DB: newsdb
+      POSTGRES_USER: newsuser
+      POSTGRES_PASSWORD: newspass
+      DEV_RESET_DB: "true"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    command: >
+      bash -c "if [ \"$DEV_RESET_DB\" = 'true' ]; then
+                 rm -rf /var/lib/postgresql/data/*;
+               fi;
+               docker-entrypoint.sh postgres"
+    
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: 
+      context:  ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    command: ["./wait-for-postgres.sh", "postgres", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+    environment:
+      - NEWSAPI_KEY=eb33be5a325c4619abc2122dacb51774
+      - GEMINI_API_KEY=AIzaSyAJ_RvGvr-oZiz7jW825GU3SOPc_60Pwro
+      - LLM_MOCK_MODE=true
+      - DATABASE_URL=postgres://newsuser:newspass@postgres:5432/newsdb
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SECRET=replace-me
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: celery
+    volumes:
+      - ./backend:/app
+    command: ["/wait-for-postgres.sh", "postgres", "celery", "-A", "core", "worker", "-l", "info"]
+    environment:
+      - NEWSAPI_KEY=eb33be5a325c4619abc2122dacb51774
+      - GEMINI_API_KEY=AIzaSyAJ_RvGvr-oZiz7jW825GU3SOPc_60Pwro
+      - LLM_MOCK_MODE=true
+      - DATABASE_URL=postgres://newsuser:newspass@postgres:5432/newsdb
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - backend
+      - redis
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    environment:
+      - NEWSAPI_KEY=eb33be5a325c4619abc2122dacb51774
+      - GEMINI_API_KEY=AIzaSyAJ_RvGvr-oZiz7jW825GU3SOPc_60Pwro
+      - LLM_MOCK_MODE=true
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/articles/
+
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+
