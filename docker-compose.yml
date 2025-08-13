@@ -5,8 +5,8 @@ services:
     container_name: postgres
     restart: unless-stopped
     environment:
-      NEWSAPI_KEY: eb33be5a325c4619abc2122dacb51774
-      GEMINI_API_KEY: AIzaSyAJ_RvGvr-oZiz7jW825GU3SOPc_60Pwro
+      NEWSAPI_KEY:  news_api_key
+      GEMINI_API_KEY:  your_gemini_api_key
       LLM_MOCK_MODE: true
       POSTGRES_DB: newsdb
       POSTGRES_USER: newsuser
